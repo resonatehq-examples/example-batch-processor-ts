@@ -44,7 +44,7 @@ export function* importRecords(
   const batchResults: BatchResult[] = [];
 
   for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i];
+    const batch = batches[i]!;
     // Each yield* is a durable checkpoint. On crash+resume,
     // completed batches are returned from cache — not re-processed.
     const result = yield* ctx.run(processBatchChunk, i, batch, crashAtBatch);
