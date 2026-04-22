@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/banner.png" alt="Batch Processor — Resonate example" />
+</p>
+
 # Batch Processor
 
 Durable bulk import with checkpoint-based progress tracking. Splits a record set into batches and processes them sequentially. If the process crashes mid-import, it resumes from the last completed batch — not from the beginning.
