@@ -143,21 +143,16 @@ example-batch-processor-ts/
 
 **Lines of code**: ~145 total, ~20 lines of workflow logic.
 
-## Comparison
+## Why the loop is the checkpoint machine
 
-Restate's batching uses virtual objects with timer-based flush triggers (~96 LOC). Inngest event batching requires configuring batch sizes as job metadata. Both require their respective servers.
+Bulk import problems usually grow scaffolding: a progress table, a cursor, resume logic, idempotency guards. This example has none of that. The workflow is a `for`-loop.
 
-Resonate's approach: a for-loop with `ctx.run()` per batch. Crash recovery is automatic. No batching configuration, no virtual object boilerplate, no separate state store.
+Each iteration calls `ctx.run(processBatchChunk, i, batch)`. That's a durable checkpoint. On crash and resume, Resonate replays the workflow from the start — but every `yield*` first checks the promise store. Completed batches return their cached result immediately; the loop skips forward to the first uncompleted batch. The loop index `i` is not state you maintain; it's state the replay rediscovers.
 
-| | Resonate | Restate | Inngest |
-|---|---|---|---|
-| Checkpoint mechanism | `ctx.run()` per batch | Virtual object state | Platform-managed |
-| Progress on crash | Resume from last batch | Resume from last state | Depends on config |
-| Workflow code | ~20 LOC | ~96 LOC | ~40 LOC |
-| Infrastructure | None | Restate server | Inngest server |
+Scale the record count from 50 to 10K to 1M and the code is identical. The only decision is `batchSize` — how many records per checkpoint, trading storage (one promise per batch) against restart granularity (how many records re-run on a mid-batch crash).
 
 ## Learn More
 
 - [Resonate documentation](https://docs.resonatehq.io)
-- [Restate batching pattern](https://github.com/restatedev/examples/tree/main/typescript/patterns-use-cases/src/batching)
-- [Inngest event batching](https://www.inngest.com/docs/guides/batching)
+- [Durable sleep](https://github.com/resonatehq-examples/example-durable-sleep-ts) — related checkpoint primitive
+- [Fan-out/fan-in](https://github.com/resonatehq-examples/example-fan-out-fan-in-ts) — parallel batch variant
